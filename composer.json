@@ -1,0 +1,17 @@
+{
+  "name": "basilicom/release-notes-bundle",
+  "description": "Functionality to send git log messages to confluence",
+  "keywords": ["log","logging","git log"],
+  "require": {
+    "php": ">=7.0.0",
+    "phpunit/phpunit": "^8.5",
+    "symfony/console": "*",
+    "guzzlehttp/guzzle": "*"
+
+  },
+  "autoload": {
+    "psr-4": {
+      "Basilicom\\ReleaseNotesBundle\\": "ReleaseNotesBundle"
+    }
+  }
+}
