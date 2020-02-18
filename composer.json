@@ -10,6 +10,18 @@
 
   },
   "license": "MIT",
+  "authors": [
+    {
+      "name": "Hendrik Hofmann",
+      "email": "hendrik.hofmann@basilicom.de",
+      "role": "Developer"
+    },
+    {
+      "name": "Alexander Heidrich",
+      "email": "alexander.heidrich@basilicom.de",
+      "role": "Developer"
+    }
+  ],
   "autoload": {
     "psr-4": {
       "Basilicom\\ReleaseNotesBundle\\": "ReleaseNotesBundle"
