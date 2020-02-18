@@ -9,6 +9,7 @@
     "guzzlehttp/guzzle": "*"
 
   },
+  "license": "MIT",
   "autoload": {
     "psr-4": {
       "Basilicom\\ReleaseNotesBundle\\": "ReleaseNotesBundle"
