@@ -18,6 +18,6 @@ Same as above, but the bundle must be added to BundleCollection in `AppKernel.ph
 
 ```
 if (class_exists('\Basilicom\ReleaseNotesBundle\ReleaseNotesBundle')) {
-    $collection->addBundle(new \Basilicom\ReleaseNotesBundle\ReleaseNotesBundle);
+    $collection->addBundle(new \Basilicom\ReleaseNotesBundle\ReleaseNotesBundle());
 }
 ```
