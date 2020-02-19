@@ -82,6 +82,8 @@ class ReleaseNotesPublisherCommand extends Command
             $completeChangelog = $this->extractAndPrepareWholeChangelog();
             $this->updateDocumentContent($appVersion, $tickets, $completeChangelog);
             $this->preparePayloadAndSendToConfluence();
+        } else {
+            echo 'No new App_Version';
         }
     }
 
