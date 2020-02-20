@@ -77,7 +77,7 @@ class ReleaseNotesPublisherCommand extends Command
 
         $this->retrieveDocumentInformation();
 
-        if (stripos($this->body, $appVersion) === true) {
+        if (stripos($this->body, $appVersion) === false) {
             $tickets = $this->extractTickets();
             $completeChangelog = $this->extractAndPrepareWholeChangelog();
             $this->updateDocumentContent($appVersion, $tickets, $completeChangelog);
