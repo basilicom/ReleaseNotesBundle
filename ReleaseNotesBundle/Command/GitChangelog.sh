@@ -1,12 +1,10 @@
 #!/bin/bash
 
 #get tag of actual version
-actualVersionTag=$(git tag | tail -1)
-actualVersionHash=$(git rev-list -n 1 $actualVersionTag)
+ACTUAL_VERSION_TAG=$(git tag | tail -1)
 
 #get tag of the version before actual version
-beforeVersionTag=$(git tag | tail -3 | head -n 1)
-beforeVersionHash=$(git rev-list -n 1 $beforeVersionTag)
+PREVIOUS_VERSION_TAG=$(git tag | tail -3 | head -n 1)
 
 #echo $listOfTickets
-git log --pretty="format:%s" $beforeVersionHash..$actualVersionHash
+git log --pretty="format:%s" "$PREVIOUS_VERSION_TAG".."$ACTUAL_VERSION_TAG"

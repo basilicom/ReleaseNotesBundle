@@ -4,10 +4,10 @@
   "keywords": ["log","logging","git log"],
   "require": {
     "php": ">=7.0.0",
+    "ext-json": "*",
     "phpunit/phpunit": "^8.5",
     "symfony/console": "*",
     "guzzlehttp/guzzle": "*"
-
   },
   "license": "MIT",
   "authors": [
