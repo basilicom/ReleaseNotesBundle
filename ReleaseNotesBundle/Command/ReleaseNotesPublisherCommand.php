@@ -5,17 +5,14 @@ namespace Basilicom\ReleaseNotesBundle\Command;
 use Exception;
 use GuzzleHttp\Client as HttpClient;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class ReleaseNotesPublisherCommand extends Command
 {
-    public const HTTP_OK = 200;
-
-    /**
-     * @var HttpClient
-     */
-    private $client;
+    private const HTTP_OK = 200;
+    private const INPUT_PARAM_VERSION_TAG = 'version-tag';
 
     /**
      * @var string
@@ -33,6 +30,36 @@ class ReleaseNotesPublisherCommand extends Command
     private $pageId = '';
 
     /**
+     * @var HttpClient
+     */
+    private $client;
+
+    /**
+     * @var string
+     */
+    private $versionTag;
+
+    /**
+     * @var OutputInterface
+     */
+    private $output;
+
+    /**
+     * @var string
+     */
+    private $confluenceUser;
+
+    /**
+     * @var string
+     */
+    private $confluencePassword;
+
+    /**
+     * @var string
+     */
+    private $confluenceUrl;
+
+    /**
      * @param string $confluenceUser
      * @param string $confluencePassword
      * @param string $confluenceUrl
@@ -45,71 +72,78 @@ class ReleaseNotesPublisherCommand extends Command
         string $pageId
     ) {
         parent::__construct();
-        $this->client = new HttpClient(
-            [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ],
-                'auth' => [
-                    $confluenceUser,
-                    $confluencePassword,
-                ],
-                'base_uri' => rtrim($confluenceUrl, '/') . '/rest/api/content/',
-                'timeout' => 2,
-            ]
-        );
+        $this->confluenceUser = $confluenceUser;
+        $this->confluencePassword = $confluencePassword;
+        $this->confluenceUrl = $confluenceUrl;
         $this->pageId = $pageId;
+    }
+
+    /**
+     * @return HttpClient
+     */
+    private function getClient()
+    {
+        if (!$this->client) {
+            $this->client = new HttpClient(
+                [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                    ],
+                    'auth' => [
+                        $this->confluenceUser,
+                        $this->confluencePassword,
+                    ],
+                    'base_uri' => rtrim($this->confluenceUrl, '/') . '/rest/api/content/',
+                    'timeout' => 2,
+                ]
+            );
+        }
+
+        return $this->client;
     }
 
     protected function configure(): void
     {
-        $this->setName('confluence:send-release-notes')
-            ->setDescription('Send Version and Changelog of actual Release to Confluence');
+        $this
+            ->setName('confluence:send-release-notes')
+            ->setDescription(
+                'Creating changelog information based on the difference between two git tags. Writes it to a confluence page.'
+            )
+            ->addArgument(self::INPUT_PARAM_VERSION_TAG, InputArgument::REQUIRED, 'The git version-rag');
     }
 
     /**
      * @param InputInterface  $input
      * @param OutputInterface $output
      *
+     * @return int
+     *
      * @throws Exception
      */
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $appVersion = getenv('APP_VERSION');
+        $this->output = $output;
+        $this->versionTag = $input->getArgument(self::INPUT_PARAM_VERSION_TAG);
 
         $this->retrieveDocumentInformation();
-
-        if (stripos($this->body, $appVersion) === false) {
-            $tickets = $this->extractTickets();
-            $completeChangelog = $this->extractAndPrepareWholeChangelog();
-            $this->updateDocumentContent($appVersion, $tickets, $completeChangelog);
+        if (stripos($this->body, $this->versionTag) === false) {
+            $this->updateDocumentContent();
             $this->preparePayloadAndSendToConfluence();
         } else {
-            echo 'The app version is already part of the changelog.';
+            $output->writeln('The app version is already part of the changelog.');
         }
+
+        return 0;
     }
 
     /**
+     * @param string $command
+     *
      * @return array
-     * @throws Exception
      */
-    private function extractTickets(): array
+    private function getCommandOutput(string $command): array
     {
-        $bashPath = dirname(__DIR__) . '/' . basename(__DIR__);
-        $onlyWebTickets = explode(
-            PHP_EOL,
-            shell_exec('/bin/bash ' . $bashPath . '/GitChangelog.sh | grep -Eo \'([A-Z]{3,}-)([0-9]+)\' | uniq')
-        );
-        $onlyWebTickets = array_unique(
-            array_filter(
-                $onlyWebTickets,
-                function ($value) {
-                    return stripos($value, 'web-0000') === false && !empty($value);
-                }
-            )
-        );
-
-        return $onlyWebTickets;
+        return explode(PHP_EOL, shell_exec($command));
     }
 
     /**
@@ -118,10 +152,11 @@ class ReleaseNotesPublisherCommand extends Command
      */
     private function extractAndPrepareWholeChangelog(): string
     {
-        $content = '';
         $bashPath = dirname(__DIR__) . '/' . basename(__DIR__);
-        $fileContents = explode(PHP_EOL, shell_exec('/bin/bash ' . $bashPath . '/GitChangelog.sh '));
+        $command = '/bin/bash ' . $bashPath . '/GitChangelog.sh ' . $this->versionTag;
+        $fileContents = $this->getCommandOutput($command);
 
+        $content = '';
         foreach ($fileContents as $commitMessage) {
             $content .= '<li>' . htmlspecialchars($commitMessage) . '</li>';
         }
@@ -143,7 +178,7 @@ class ReleaseNotesPublisherCommand extends Command
      */
     private function getNextDocumentVersion(): int
     {
-        $response = $this->client->request('GET', $this->pageId);
+        $response = $this->getClient()->request('GET', $this->pageId);
 
         if ($response->getStatusCode() !== self::HTTP_OK) {
             throw new Exception('Could not get response');
@@ -161,7 +196,7 @@ class ReleaseNotesPublisherCommand extends Command
      */
     private function retrieveDocumentInformation()
     {
-        $response = $this->client->request('GET', $this->pageId . '?expand=body.storage');
+        $response = $this->getClient()->request('GET', $this->pageId . '?expand=body.storage');
         if ($response->getStatusCode() !== self::HTTP_OK) {
             throw new Exception('Could not get response');
         }
@@ -173,27 +208,55 @@ class ReleaseNotesPublisherCommand extends Command
     }
 
     /**
-     * @param string $appVersion
-     * @param array  $tickets
-     * @param string $completeChangelog
+     * @throws Exception
      */
-    private function updateDocumentContent(string $appVersion, array $tickets, string $completeChangelog)
+    private function updateDocumentContent()
     {
+        $headline = '<h2>' . $this->versionTag . ' - ' . date('Y-m-d H:i', time()) . '</h2>';
         $ticketList = '<ul>';
-        foreach (array_unique($tickets) as $ticket) {
-            if (strtoupper($ticket) !== 'WEB-0000') {
-                $ticketList .= '
-                <li>
-                    <ac:structured-macro ac:name="jira" ac:schema-version="1">
-                        <ac:parameter ac:name="server">Jira f&uuml;r DB Connect</ac:parameter>
-                        <ac:parameter ac:name="key">' . $ticket . '</ac:parameter>
-                    </ac:structured-macro>                  
-                </li>';
-            }
+        $extractedTickets = $this->getTicketIds();
+        foreach ($extractedTickets as $ticket) {
+            $ticketList .= '
+            <li>
+                <ac:structured-macro ac:name="jira" ac:schema-version="1">
+                    <ac:parameter ac:name="server">Jira f&uuml;r DB Connect</ac:parameter>
+                    <ac:parameter ac:name="key">' . $ticket . '</ac:parameter>
+                </ac:structured-macro>                  
+            </li>';
         }
         $ticketList .= '</ul>';
+        $changelog = $this->extractAndPrepareWholeChangelog();
 
-        $this->body = '<p><h2>' . $appVersion . '</h2>' . $ticketList . '</p>' . $completeChangelog . $this->body;
+        $body = '<p>';
+        $body .= $headline;
+        $body .= $ticketList;
+        $body .= '</p>';
+        $body .= $changelog;
+        $body .= $this->body;
+
+        $this->body = $body;
+    }
+
+    /**
+     * @return array
+     * @throws Exception
+     */
+    private function getTicketIds(): array
+    {
+        $bashPath = dirname(__DIR__) . '/' . basename(__DIR__);
+        $command = '/bin/bash ' . $bashPath . '/GitChangelog.sh ' . $this->versionTag . ' | grep -Eo \'([A-Z]{3,}-)([0-9]+)\' | uniq';
+
+        $onlyWebTickets = $this->getCommandOutput($command);
+        $onlyWebTickets = array_unique(
+            array_filter(
+                $onlyWebTickets,
+                function ($value) {
+                    return !empty($value);
+                }
+            )
+        );
+
+        return $onlyWebTickets;
     }
 
     /**
@@ -216,7 +279,7 @@ class ReleaseNotesPublisherCommand extends Command
             ],
         ];
 
-        $response = $this->client->request(
+        $response = $this->getClient()->request(
             'PUT',
             $this->pageId,
             [
@@ -225,7 +288,7 @@ class ReleaseNotesPublisherCommand extends Command
         );
 
         if ($response->getStatusCode() !== self::HTTP_OK) {
-            throw new Exception('Could not send new version');
+            $this->output->writeln('Could not send new version.');
         }
     }
 }

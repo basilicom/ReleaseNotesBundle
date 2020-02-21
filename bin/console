@@ -1,0 +1,15 @@
+#!/usr/bin/env php
+<?php
+
+set_time_limit(0);
+
+require __DIR__.'/../vendor/autoload.php';
+
+use Basilicom\ReleaseNotesBundle\Command\ReleaseNotesPublisherCommand;
+use Symfony\Component\Console\Application;
+
+$application = new Application('echo', '1.0.0');
+$command = new ReleaseNotesPublisherCommand('', '', '', '');
+
+$application->add($command);
+$application->run();
