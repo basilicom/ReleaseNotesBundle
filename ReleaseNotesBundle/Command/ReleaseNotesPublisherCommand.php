@@ -45,17 +45,19 @@ class ReleaseNotesPublisherCommand extends Command
         string $pageId
     ) {
         parent::__construct();
-        $this->client = new HttpClient([
-            'headers' => [
-                'Content-Type' => 'application/json',
-            ],
-            'auth' => [
-                $confluenceUser,
-                $confluencePassword,
-            ],
-            'base_uri' => rtrim($confluenceUrl, '/') . '/rest/api/content/',
-            'timeout' => 2,
-        ]);
+        $this->client = new HttpClient(
+            [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                ],
+                'auth' => [
+                    $confluenceUser,
+                    $confluencePassword,
+                ],
+                'base_uri' => rtrim($confluenceUrl, '/') . '/rest/api/content/',
+                'timeout' => 2,
+            ]
+        );
         $this->pageId = $pageId;
     }
 
@@ -83,52 +85,54 @@ class ReleaseNotesPublisherCommand extends Command
             $this->updateDocumentContent($appVersion, $tickets, $completeChangelog);
             $this->preparePayloadAndSendToConfluence();
         } else {
-            echo 'No new App_Version';
+            echo 'The app version is already part of the changelog.';
         }
     }
 
     /**
-     * @param $fileName
-     *
      * @return array
      * @throws Exception
      */
     private function extractTickets(): array
     {
-        $onlyWebTickets = explode(PHP_EOL,
-            shell_exec('/bin/bash ' . dirname(__DIR__) . '/' . basename(__DIR__) . '/GitChangelog.sh | grep -Eo \'([A-Z]{3,}-)([0-9]+)\' | uniq'));
-        $onlyWebTickets = array_unique(array_filter($onlyWebTickets, function ($value) {
-                return stripos($value, 'web-0000') === false && !empty($value);
-            })
+        $bashPath = dirname(__DIR__) . '/' . basename(__DIR__);
+        $onlyWebTickets = explode(
+            PHP_EOL,
+            shell_exec('/bin/bash ' . $bashPath . '/GitChangelog.sh | grep -Eo \'([A-Z]{3,}-)([0-9]+)\' | uniq')
+        );
+        $onlyWebTickets = array_unique(
+            array_filter(
+                $onlyWebTickets,
+                function ($value) {
+                    return stripos($value, 'web-0000') === false && !empty($value);
+                }
+            )
         );
 
         return $onlyWebTickets;
     }
 
     /**
-     * @param $fileName
-     *
      * @return string
      * @throws Exception
      */
     private function extractAndPrepareWholeChangelog(): string
     {
         $content = '';
-        $fileContents = explode(PHP_EOL,
-            shell_exec('/bin/bash ' . dirname(__DIR__) . '/' . basename(__DIR__) . '/GitChangelog.sh '));
+        $bashPath = dirname(__DIR__) . '/' . basename(__DIR__);
+        $fileContents = explode(PHP_EOL, shell_exec('/bin/bash ' . $bashPath . '/GitChangelog.sh '));
 
-        foreach ($fileContents as $commit) {
-            $content .= '<li>' . $commit . '</li>';
+        foreach ($fileContents as $commitMessage) {
+            $content .= '<li>' . htmlspecialchars($commitMessage) . '</li>';
         }
-        $body = '
+
+        return '
             <ac:structured-macro ac:name="expand" ac:schema-version="1">
                 <ac:parameter ac:name= "title">Gesamtes Changelog einblenden</ac:parameter>    
                     <ac:rich-text-body>
                         <ul>' . $content . '</ul>              
                     </ac:rich-text-body>
             </ac:structured-macro>';
-
-        return $body;
     }
 
 
@@ -145,9 +149,9 @@ class ReleaseNotesPublisherCommand extends Command
             throw new Exception('Could not get response');
         }
 
-        $content = json_decode((string) $response->getBody(), true);
+        $content = json_decode((string)$response->getBody(), true);
 
-        return (int) $content['version']['number'] + 1;
+        return (int)$content['version']['number'] + 1;
     }
 
     /**
@@ -162,10 +166,10 @@ class ReleaseNotesPublisherCommand extends Command
             throw new Exception('Could not get response');
         }
 
-        $content = json_decode((string) $response->getBody(), true);
+        $content = json_decode((string)$response->getBody(), true);
 
-        $this->pageTitle = (string) $content['title'];
-        $this->body = (string) $content['body']['storage']['value'];
+        $this->pageTitle = (string)$content['title'];
+        $this->body = (string)$content['body']['storage']['value'];
     }
 
     /**
@@ -212,9 +216,13 @@ class ReleaseNotesPublisherCommand extends Command
             ],
         ];
 
-        $response = $this->client->request('PUT', $this->pageId, [
-            'body' => json_encode($payload),
-        ]);
+        $response = $this->client->request(
+            'PUT',
+            $this->pageId,
+            [
+                'body' => json_encode($payload),
+            ]
+        );
 
         if ($response->getStatusCode() !== self::HTTP_OK) {
             throw new Exception('Could not send new version');

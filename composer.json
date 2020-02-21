@@ -3,7 +3,7 @@
   "description": "Functionality to send git log messages to confluence",
   "keywords": ["log","logging","git log"],
   "require": {
-    "php": ">=7.0.0",
+    "php": ">=7.3.0",
     "ext-json": "*",
     "phpunit/phpunit": "^8.5",
     "symfony/console": "*",
