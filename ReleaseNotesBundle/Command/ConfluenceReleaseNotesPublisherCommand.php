@@ -9,7 +9,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class ReleaseNotesPublisherCommand extends Command
+class ConfluenceReleaseNotesPublisherCommand extends Command
 {
     private const HTTP_OK = 200;
     private const INPUT_PARAM_VERSION_TAG = 'version-tag';

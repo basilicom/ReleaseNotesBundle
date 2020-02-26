@@ -11,7 +11,7 @@ services:
 
 #### Example Configuration ####
 
-#    Basilicom\ReleaseNotesBundle\Command\ReleaseNotesPublisherCommand:
+#    Basilicom\ReleaseNotesBundle\Command\ConfluenceReleaseNotesPublisherCommand:
 #        public: true
 #        tags: ['console.command']
 #        arguments:
