@@ -32,7 +32,29 @@ if (class_exists('\Basilicom\ReleaseNotesBundle\ReleaseNotesBundle')) {
     $collection->addBundle(new \Basilicom\ReleaseNotesBundle\ReleaseNotesBundle);
 }
 ```
+#### Example Configuration 
+```
+Basilicom\ReleaseNotesBundle\Command\ConfluenceReleaseNotesPublisherCommand:    
+    public: true
+    tags: ['console.command']
+    arguments:
+        $confluenceUser: 'your-username'
+        $confluencePassword: 'your-password'
+        $confluenceUrl: 'https://your-confluence.com'
+        $pageId: '123'
 
-#### Todos
-* `APP_ENV` should be a parameter for the command + a valid tag
-* the `GitChangelog.sh` should get the starting tag, so that you can run this command for any tag/version 
+
+Basilicom\ReleaseNotesBundle\Command\RocketChatReleaseNotesPublisherCommand:
+    public: true
+    tags: ['console.command']
+    arguments:
+        $rocketChatUser: 'upsource-bot'
+        $rocketChatPassword: "eb_i7F<(sW'T6?yo@E[)n~SNX^"
+        $rocketChatBaseUri: 'https://rocketchat.service.dbrent.net/api/v1/'
+        $message: "Release on "
+        #{environment} - {date}
+#            $parameters:
+#                environment: "%env(APP_ENV)%"
+
+```
+    

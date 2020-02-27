@@ -2,14 +2,19 @@
 
 namespace Basilicom\ReleaseNotesBundle\Command;
 
+use DateTime;
 use Exception;
 use GuzzleHttp\Client as HttpClient;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class RocketChatReleaseNotesPublisherCommand extends Command
 {
+    private const HTTP_OK = 200;
+    private const INPUT_PARAM_VERSION_TAG = 'version-tag';
+
     /**
      * @var HttpClient
      */
@@ -40,12 +45,29 @@ class RocketChatReleaseNotesPublisherCommand extends Command
      */
     private $rocketChatBaseUri;
 
-    private $rocketChatLoginUrl;
-
     /**
      * @var string
      */
     private $rocketChatChannel;
+
+    /**
+     * @var string
+     */
+    private $userId;
+
+    /**
+     * @var string
+     */
+    private $authToken;
+    /**
+     * @var string
+     */
+    private $message;
+
+    /**
+     * @var array
+     */
+    private $parameters = [];
 
 
     /**
@@ -54,16 +76,25 @@ class RocketChatReleaseNotesPublisherCommand extends Command
      * @param string $rocketChatUser
      * @param string $rocketChatPassword
      * @param string $rocketChatBaseUri
+     * @param string $rocketChatChannel
+     * @param string $message
+     * @param array  $messageParameters
      */
     public function __construct(
         string $rocketChatUser,
         string $rocketChatPassword,
-        string $rocketChatBaseUri
+        string $rocketChatBaseUri,
+        string $rocketChatChannel,
+        string $message,
+        array $messageParameters
     ) {
         parent::__construct();
         $this->rocketChatUser = $rocketChatUser;
         $this->rocketChatPassword = $rocketChatPassword;
         $this->rocketChatBaseUri = $rocketChatBaseUri;
+        $this->rocketChatChannel = $rocketChatChannel;
+        $this->message = $message;
+        $this->parameters = $messageParameters;
     }
 
     /**
@@ -91,8 +122,9 @@ class RocketChatReleaseNotesPublisherCommand extends Command
         $this
             ->setName('rocketChat:send-release-notes')
             ->setDescription(
-                'Creating changelog information based on the difference between two git tags. Sends it to Rocket Chat Channel.'
-            );
+                'Provides changelog information based on the difference between two git tags. Sends it to Rocket Chat Channel.'
+            )
+            ->addArgument(self::INPUT_PARAM_VERSION_TAG, InputArgument::REQUIRED, 'The git version-rag');
     }
 
     /**
@@ -106,21 +138,26 @@ class RocketChatReleaseNotesPublisherCommand extends Command
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $this->output = $output;
-        $this->setCredentials();
-        $this->authenticateUser();
+        $this->versionTag = $input->getArgument(self::INPUT_PARAM_VERSION_TAG);
 
+        $this->authenticateUser();
+        $this->createMessage();
+        $this->postToChannel($this->message);
 
         return 0;
     }
 
-    public function authenticateUser()
+    /**
+     * User Authentication, User stays logged in for 300 sec after that call.
+     */
+    private function authenticateUser(): void
     {
         $loginData = [
-            "user" => $this->rocketChatUser,
-            "password" => $this->rocketChatPassword,
+            'user' => $this->rocketChatUser,
+            'password' => $this->rocketChatPassword,
         ];
 
-        $result = $this->getClient()->request(
+        $response = $this->getClient()->request(
             'POST',
             'login',
             [
@@ -128,41 +165,56 @@ class RocketChatReleaseNotesPublisherCommand extends Command
             ]
         );
 
-        if ($result->getStatusCode() !== 200) {
+        if ($response->getStatusCode() !== self::HTTP_OK) {
+            $this->output->writeln('Could\'nt establish connection, please check your credentials');
+        }
+
+        $responseBody = (array)json_decode($response->getBody()->getContents(), true);
+
+        $this->userId = $responseBody['data']['userId'];
+        $this->authToken = $responseBody['data']['authToken'];
+    }
+
+    /**
+     * @param string $message
+     */
+    private function postToChannel(string $message): void
+    {
+        $payload = [
+            'channel' => '#' . $this->rocketChatChannel,
+            'text' => $message,
+        ];
+
+        $response = $this->getClient()->request(
+            'POST',
+            'chat.postMessage',
+            [
+                'headers' => [
+                    'X-User-Id' => $this->userId,
+                    'X-Auth-Token' => $this->authToken,
+                ],
+                'body' => json_encode($payload),
+            ]
+        );
+
+        if ($response->getStatusCode() !== self::HTTP_OK) {
             $this->output->writeln('Could\'nt establish connection, please check your credentials');
         }
     }
 
-    private function setCredentials()
+    private function createMessage(): void
     {
-        $this->rocketChatUser = "upsource-bot";
-        $this->rocketChatPassword = "eb_i7F<(sW'T6?yo@E[)n~SNX^";
-        $this->rocketChatBaseUri = "https://rocketchat.service.dbrent.net";
+        foreach ($this->parameters as $parameterName => $parameterValue) {
+            if ($parameterName == 'date') {
+                $time = new DateTime('now');
+                $parameterValue = $time->format($parameterValue);
+            }
+            if ($parameterName == 'version' && $this->versionTag != '') {
+                $parameterValue = $this->versionTag;
+            }
+
+            $this->message = str_replace('{' . $parameterName . '}', $parameterValue, $this->message);
+        }
     }
-
-
-    /**
-     * @return array
-     * @throws Exception
-     */
-    private function getTicketIds(): array
-    {
-        $bashPath = dirname(__DIR__) . '/' . basename(__DIR__);
-        $command = '/bin/bash ' . $bashPath . '/GitChangelog.sh ' . $this->versionTag . ' | grep -Eo \'([A-Z]{3,}-)([0-9]+)\' | uniq';
-
-        $onlyWebTickets = $this->getCommandOutput($command);
-        $onlyWebTickets = array_unique(
-            array_filter(
-                $onlyWebTickets,
-                function ($value) {
-                    return !empty($value);
-                }
-            )
-        );
-
-        return $onlyWebTickets;
-    }
-
-
 }
 

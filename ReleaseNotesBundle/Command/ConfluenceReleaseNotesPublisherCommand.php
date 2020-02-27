@@ -107,7 +107,7 @@ class ConfluenceReleaseNotesPublisherCommand extends Command
         $this
             ->setName('confluence:send-release-notes')
             ->setDescription(
-                'Creating changelog information based on the difference between two git tags. Writes it to a confluence page.'
+                'Provides changelog information based on the difference between two git tags. Writes it to a confluence page.'
             )
             ->addArgument(self::INPUT_PARAM_VERSION_TAG, InputArgument::REQUIRED, 'The git version-rag');
     }
