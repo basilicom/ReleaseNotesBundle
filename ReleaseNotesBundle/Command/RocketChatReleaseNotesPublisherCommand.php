@@ -86,7 +86,7 @@ class RocketChatReleaseNotesPublisherCommand extends Command
         string $rocketChatBaseUri,
         string $rocketChatChannel,
         string $message,
-        array $messageParameters
+        array  $messageParameters
     ) {
         parent::__construct();
         $this->rocketChatUser = $rocketChatUser;
@@ -100,7 +100,7 @@ class RocketChatReleaseNotesPublisherCommand extends Command
     /**
      * @return HttpClient
      */
-    private function getClient()
+    private function getClient(): HttpClient
     {
         if (!$this->client) {
             $this->client = new HttpClient(
@@ -120,7 +120,7 @@ class RocketChatReleaseNotesPublisherCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('rocketChat:send-release-notes')
+            ->setName('release-notes:send-to-rocket-chat')
             ->setDescription(
                 'Provides changelog information based on the difference between two git tags. Sends it to Rocket Chat Channel.'
             )
@@ -135,14 +135,14 @@ class RocketChatReleaseNotesPublisherCommand extends Command
      *
      * @throws Exception
      */
-    public function execute(InputInterface $input, OutputInterface $output)
+    public function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->output = $output;
         $this->versionTag = $input->getArgument(self::INPUT_PARAM_VERSION_TAG);
 
         $this->authenticateUser();
         $this->createMessage();
-        $this->postToChannel($this->message);
+        $this->postToChannel();
 
         return 0;
     }
@@ -167,22 +167,20 @@ class RocketChatReleaseNotesPublisherCommand extends Command
 
         if ($response->getStatusCode() !== self::HTTP_OK) {
             $this->output->writeln('Could\'nt establish connection, please check your credentials');
+        } else {
+            $responseBody = (array)json_decode($response->getBody()->getContents(), true);
+
+            $this->userId = $responseBody['data']['userId'];
+            $this->authToken = $responseBody['data']['authToken'];
         }
-
-        $responseBody = (array)json_decode($response->getBody()->getContents(), true);
-
-        $this->userId = $responseBody['data']['userId'];
-        $this->authToken = $responseBody['data']['authToken'];
     }
 
-    /**
-     * @param string $message
-     */
-    private function postToChannel(string $message): void
+
+    private function postToChannel(): void
     {
         $payload = [
             'channel' => '#' . $this->rocketChatChannel,
-            'text' => $message,
+            'text' => $this->message,
         ];
 
         $response = $this->getClient()->request(
@@ -202,7 +200,7 @@ class RocketChatReleaseNotesPublisherCommand extends Command
         }
     }
 
-    private function createMessage(): void
+    private function createMessage()
     {
         foreach ($this->parameters as $parameterName => $parameterValue) {
             if ($parameterName == 'date') {

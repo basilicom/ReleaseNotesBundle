@@ -105,7 +105,7 @@ class ConfluenceReleaseNotesPublisherCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('confluence:send-release-notes')
+            ->setName('release-notes:send-to-confluence')
             ->setDescription(
                 'Provides changelog information based on the difference between two git tags. Writes it to a confluence page.'
             )
