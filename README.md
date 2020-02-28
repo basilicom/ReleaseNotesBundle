@@ -33,6 +33,8 @@ if (class_exists('\Basilicom\ReleaseNotesBundle\ReleaseNotesBundle')) {
 }
 ```
 #### Example Configuration 
+
+##### Confluence Publisher
 ```
 Basilicom\ReleaseNotesBundle\Command\ConfluenceReleaseNotesPublisherCommand:    
     public: true
@@ -42,19 +44,32 @@ Basilicom\ReleaseNotesBundle\Command\ConfluenceReleaseNotesPublisherCommand:
         $confluencePassword: 'your-password'
         $confluenceUrl: 'https://your-confluence.com'
         $pageId: '123'
+```
+##### Confluence Publisher
+You can define as many message parameters as you need.
+If you want to provide a dynamic version tag you can append this as a command argument and use the reserved
+`version` key to use it. e.g. `release-notes:send-to-rocket-chat v0.2.4`
 
-
+```
 Basilicom\ReleaseNotesBundle\Command\RocketChatReleaseNotesPublisherCommand:
-    public: true
-    tags: ['console.command']
-    arguments:
-        $rocketChatUser: ''
-        $rocketChatPassword: ""
-        $rocketChatBaseUri: ''
-        $message: "Release on "
-        #{environment} - {date}
-#            $parameters:
-#                environment: "%env(APP_ENV)%"
+        public: true
+        tags: ['console.command']
+        arguments:
+            $rocketChatUser: '%env(ROCKET_CHAT_USER)%'
+            $rocketChatPassword: '%env(ROCKET_CHAT_PASSWORD)%'
+            $rocketChatBaseUri: 'https://rocketchat.your-domain.net'
+            $rocketChatChannel: 'the rocket chat channel you want to post to'
+            $message: "
+                Value 1 will be inserted here -> {key1}                       \n
+                
+                Version: {version}                  \n
+                Verantwortlich: #basilicom          \n
+                Datum: {date}
+            "
+            $messageParameters:
+                key1: 'value1'
+                date: 'd.M.Y H:i:s'
+                version: ''
 
 ```
     

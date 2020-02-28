@@ -24,6 +24,7 @@ $rocketChatPublisherCommand = new RocketChatReleaseNotesPublisherCommand(
         '',
         '',
         '',
+    []
 );
 
 $application->add($confluencePublisherCommand);
