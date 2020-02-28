@@ -86,7 +86,7 @@ class RocketChatReleaseNotesPublisherCommand extends Command
         string $rocketChatBaseUri,
         string $rocketChatChannel,
         string $message,
-        array  $messageParameters
+        array $messageParameters
     ) {
         parent::__construct();
         $this->rocketChatUser = $rocketChatUser;
@@ -94,7 +94,13 @@ class RocketChatReleaseNotesPublisherCommand extends Command
         $this->rocketChatBaseUri = $rocketChatBaseUri;
         $this->rocketChatChannel = $rocketChatChannel;
         $this->message = $message;
-        $this->parameters = $messageParameters;
+        $this->parameters = array_merge(
+            [
+                'date' => 'Y-m-d H:i:s',
+                'version' => 'latest',
+            ],
+            $messageParameters
+        );
     }
 
     /**
@@ -203,11 +209,11 @@ class RocketChatReleaseNotesPublisherCommand extends Command
     private function createMessage()
     {
         foreach ($this->parameters as $parameterName => $parameterValue) {
-            if ($parameterName == 'date') {
+            if ($parameterName === 'date') {
                 $time = new DateTime('now');
                 $parameterValue = $time->format($parameterValue);
             }
-            if ($parameterName == 'version' && $this->versionTag != '') {
+            if ($parameterName === 'version' && $this->versionTag !== '') {
                 $parameterValue = $this->versionTag;
             }
 
