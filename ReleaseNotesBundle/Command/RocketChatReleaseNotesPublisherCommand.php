@@ -86,7 +86,7 @@ class RocketChatReleaseNotesPublisherCommand extends Command
         string $rocketChatBaseUri,
         string $rocketChatChannel,
         string $message,
-        array $messageParameters
+        array  $messageParameters
     ) {
         parent::__construct();
         $this->rocketChatUser = $rocketChatUser;

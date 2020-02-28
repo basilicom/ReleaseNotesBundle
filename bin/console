@@ -10,10 +10,21 @@ use Basilicom\ReleaseNotesBundle\Command\RocketChatReleaseNotesPublisherCommand;
 
 use Symfony\Component\Console\Application;
 
-$application = new Application('echo', '1.0.0');
+$application = new Application('Git Release Notes Publisher', '1.0.4');
 
-$confluencePublisherCommand = new ConfluenceReleaseNotesPublisherCommand('', '', '', '');
-$rocketChatPublisherCommand = new RocketChatReleaseNotesPublisherCommand('', '', '');
+$confluencePublisherCommand = new ConfluenceReleaseNotesPublisherCommand(
+    '',
+    '',
+    '',
+    ''
+);
+$rocketChatPublisherCommand = new RocketChatReleaseNotesPublisherCommand(
+        '',
+        '',
+        '',
+        '',
+        '',
+);
 
 $application->add($confluencePublisherCommand);
 $application->add($rocketChatPublisherCommand);
