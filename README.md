@@ -45,7 +45,7 @@ Basilicom\ReleaseNotesBundle\Command\ConfluenceReleaseNotesPublisherCommand:
         $confluenceUrl: 'https://your-confluence.com'
         $pageId: '123'
 ```
-##### Confluence Publisher
+##### RocketChat Publisher
 You can define as many message parameters as you need.
 If you want to provide a dynamic version tag you can append this as a command argument and use the reserved
 `version` key to use it. e.g. `release-notes:send-to-rocket-chat v0.2.4`
