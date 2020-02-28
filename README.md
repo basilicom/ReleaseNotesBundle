@@ -48,9 +48,9 @@ Basilicom\ReleaseNotesBundle\Command\RocketChatReleaseNotesPublisherCommand:
     public: true
     tags: ['console.command']
     arguments:
-        $rocketChatUser: 'upsource-bot'
-        $rocketChatPassword: "eb_i7F<(sW'T6?yo@E[)n~SNX^"
-        $rocketChatBaseUri: 'https://rocketchat.service.dbrent.net/api/v1/'
+        $rocketChatUser: ''
+        $rocketChatPassword: ""
+        $rocketChatBaseUri: ''
         $message: "Release on "
         #{environment} - {date}
 #            $parameters:
