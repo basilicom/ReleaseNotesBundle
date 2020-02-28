@@ -9,7 +9,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class ReleaseNotesPublisherCommand extends Command
+class ConfluenceReleaseNotesPublisherCommand extends Command
 {
     private const HTTP_OK = 200;
     private const INPUT_PARAM_VERSION_TAG = 'version-tag';
@@ -105,9 +105,9 @@ class ReleaseNotesPublisherCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('confluence:send-release-notes')
+            ->setName('release-notes:send-to-confluence')
             ->setDescription(
-                'Creating changelog information based on the difference between two git tags. Writes it to a confluence page.'
+                'Provides changelog information based on the difference between two git tags. Writes it to a confluence page.'
             )
             ->addArgument(self::INPUT_PARAM_VERSION_TAG, InputArgument::REQUIRED, 'The git version-rag');
     }

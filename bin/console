@@ -5,11 +5,28 @@ set_time_limit(0);
 
 require __DIR__.'/../vendor/autoload.php';
 
-use Basilicom\ReleaseNotesBundle\Command\ReleaseNotesPublisherCommand;
+use Basilicom\ReleaseNotesBundle\Command\ConfluenceReleaseNotesPublisherCommand;
+use Basilicom\ReleaseNotesBundle\Command\RocketChatReleaseNotesPublisherCommand;
+
 use Symfony\Component\Console\Application;
 
-$application = new Application('echo', '1.0.0');
-$command = new ReleaseNotesPublisherCommand('', '', '', '');
+$application = new Application('Git Release Notes Publisher', '1.0.4');
 
-$application->add($command);
+$confluencePublisherCommand = new ConfluenceReleaseNotesPublisherCommand(
+    '',
+    '',
+    '',
+    ''
+);
+$rocketChatPublisherCommand = new RocketChatReleaseNotesPublisherCommand(
+        '',
+        '',
+        '',
+        '',
+        '',
+);
+
+$application->add($confluencePublisherCommand);
+$application->add($rocketChatPublisherCommand);
+
 $application->run();
