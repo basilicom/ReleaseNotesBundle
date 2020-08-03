@@ -5,8 +5,8 @@ Check `Resources/config/services.yaml` for example configuration.
 
 ### Usage
 ```
-bin/console confluence:send-release-notes <version-tag>
-bin/console confluence:send-release-notes v0.0.2
+bin/console release-notes:send-to-confluence <version-tag>
+bin/console release-notes:send-to-rocket-chat <version-tag>
 ```
 
 First, this command will get all tags from the repository.
@@ -28,7 +28,7 @@ return [
 Same as above, but the bundle must be added to BundleCollection in `AppKernel.php`, e.g. 
 
 ```
-if (class_exists('\Basilicom\ReleaseNotesBundle\ReleaseNotesBundle')) {
+if (class_exists('\\Basilicom\\ReleaseNotesBundle\\ReleaseNotesBundle')) {
     $collection->addBundle(new \Basilicom\ReleaseNotesBundle\ReleaseNotesBundle);
 }
 ```
